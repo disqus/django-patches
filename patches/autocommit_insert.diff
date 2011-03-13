@@ -1,0 +1,24 @@
+diff --git a/django_root/django/db/backends/postgresql_psycopg2/base.py b/django_root/django/db/backends/postgresql_psycopg2/base.py
+index 29b7e7f..bd1bb43 100644
+--- a/django_root/django/db/backends/postgresql_psycopg2/base.py
++++ b/django_root/django/db/backends/postgresql_psycopg2/base.py
+@@ -103,6 +103,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
+         autocommit = self.settings_dict["OPTIONS"].get('autocommit', False)
+         self.features.uses_autocommit = autocommit
+         self._set_isolation_level(int(not autocommit))
++        self.features.can_return_id_from_insert = autocommit
+         self.ops = DatabaseOperations(self)
+         self.client = DatabaseClient(self)
+         self.creation = DatabaseCreation(self)
+@@ -153,11 +154,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
+                     # handling, so we forbid it for now.
+                     from django.core.exceptions import ImproperlyConfigured
+                     raise ImproperlyConfigured("You cannot use autocommit=True with PostgreSQL prior to 8.2 at the moment.")
+-                else:
+-                    # FIXME: Eventually we're enable this by default for
+-                    # versions that support it, but, right now, that's hard to
+-                    # do without breaking other things (#10509).
+-                    self.features.can_return_id_from_insert = True
+         return CursorWrapper(cursor)
+ 
+     def _enter_transaction_management(self, managed):
