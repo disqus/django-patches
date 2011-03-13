@@ -1,5 +1,5 @@
 diff --git a/django_root/django/db/models/base.py b/django_root/django/db/models/base.py
-index 4da2802..ed45859 100644
+index 37331b3..4da2802 100644
 --- a/django_root/django/db/models/base.py
 +++ b/django_root/django/db/models/base.py
 @@ -1,11 +1,12 @@
@@ -11,24 +11,24 @@ index 4da2802..ed45859 100644
  import django.db.models.manager     # Imported to register signal handler.
  from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, FieldError, ValidationError, NON_FIELD_ERRORS
  from django.core import validators
--from django.db.models.expressions import ExpressionNode
 +from django.db.models.expressions import ExpressionNode, F
  from django.db.models.fields import AutoField, FieldDoesNotExist
  from django.db.models.fields.related import OneToOneRel, ManyToOneRel, OneToOneField
  from django.db.models.query import delete_objects, Q
-@@ -442,12 +443,18 @@ class Model(object):
-         Updates specified attributes on the current instance.
-         """
-         assert self.pk, "Cannot update an instance that has not yet been created."
--        self.__class__._base_manager.using(using).filter(pk=self.pk).update(**kwargs)
--        for k, v in kwargs.iteritems():
+@@ -436,6 +437,20 @@ class Model(object):
+ 
+     save.alters_data = True
+ 
++    def update(self, using=None, **kwargs):
++        """
++        Updates specified attributes on the current instance.
++        """
++        assert self.pk, "Cannot update an instance that has not yet been created."
 +        affected = self.__class__._base_manager.using(using).filter(pk=self.pk).update(**kwargs)
-+        for k,v in kwargs.iteritems():
-             if isinstance(v, ExpressionNode):
--                # NotImplemented
--                continue
-+                v = resolve_expression_node(self, v)
-             setattr(self, k, v)
++        for k, v in kwargs.iteritems():
++            if isinstance(v, ExpressionNode):
++                v = resolve_expression_node(self, v) NotImplemented
++            setattr(self, k, v)
 +        if affected == 1:
 +            signals.post_save.send(sender=self.__class__, instance=self, created=False)
 +            return True
@@ -36,8 +36,12 @@ index 4da2802..ed45859 100644
 +            raise self.DoesNotExist("Cannot update an instance that is not in the database.")
 +        else:
 +            raise ValueError("Somehow we have updated multiple rows, and you are now royally fucked.")
- 
-     update.alters_data = True
++
++    update.alters_data = True
++
+     def save_base(self, raw=False, cls=None, origin=None, force_insert=False,
+             force_update=False, using=None):
+         """
  
 @@ -1004,3 +1011,32 @@ if sys.version_info < (2, 5):
  else:
@@ -71,16 +75,32 @@ index 4da2802..ed45859 100644
 +    runner = _resolve(instance, node.children[0])
 +    for n in node.children[1:]:
 +        runner = op(runner, _resolve(instance, n))
-+    return runner
 diff --git a/django_root/tests/modeltests/update/tests.py b/django_root/tests/modeltests/update/tests.py
-index ea7259e..13c8e1a 100644
+index 05397f8..ea7259e 100644
 --- a/django_root/tests/modeltests/update/tests.py
 +++ b/django_root/tests/modeltests/update/tests.py
-@@ -61,4 +61,4 @@ class SimpleTest(TestCase):
-         Test the update method with expressions which are not implemented.
-         """
-         self.a1.update(x=F('x') + 100)
--        self.failUnlessEqual(self.a1.x, 10)
-\ No newline at end of file
+@@ -1,4 +1,5 @@
+ from django.test import TestCase
++from django.db.models import F
+ 
+ from models import A, B, D
+ 
+@@ -47,3 +48,17 @@ class SimpleTest(TestCase):
+         self.failUnlessEqual(num_updated, 0)
+         cnt = D.objects.filter(y=100).count()
+         self.failUnlessEqual(cnt, 0)
++    
++    def test_self_update(self):
++        """
++        Test the update method attached to an instance.
++        """
++        self.a1.update(x=100)
++        self.failUnlessEqual(self.a1.x, 100)
++    
++    def test_self_update_with_expressions(self):
++        """
++        Test the update method with expressions which are not implemented.
++        """
++        self.a1.update(x=F('x') + 100)
 +        self.failUnlessEqual(self.a1.x, 110)
 \ No newline at end of file
