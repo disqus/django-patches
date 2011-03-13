@@ -1,0 +1,13 @@
+diff --git a/django_root/django/db/models/sql/compiler.py b/django_root/django/db/models/sql/compiler.py
+index 4727af1..e45f13a 100644
+--- a/django_root/django/db/models/sql/compiler.py
++++ b/django_root/django/db/models/sql/compiler.py
+@@ -772,7 +772,7 @@ class SQLInsertCompiler(SQLCompiler):
+         values = [self.placeholder(*v) for v in self.query.values]
+         result.append('VALUES (%s)' % ', '.join(values))
+         params = self.query.params
+-        if self.return_id and self.connection.features.can_return_id_from_insert:
++        if self.connection.features.can_return_id_from_insert and self.return_id:
+             col = "%s.%s" % (qn(opts.db_table), qn(opts.pk.column))
+             r_fmt, r_params = self.connection.ops.return_insert_id()
+             result.append(r_fmt % col)
