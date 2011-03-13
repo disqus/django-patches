@@ -1,0 +1,21 @@
+diff --git a/django_root/django/db/backends/postgresql_psycopg2/base.py b/django_root/django/db/backends/postgresql_psycopg2/base.py
+index bd1bb43..12938d5 100644
+--- a/django_root/django/db/backends/postgresql_psycopg2/base.py
++++ b/django_root/django/db/backends/postgresql_psycopg2/base.py
+@@ -110,6 +110,16 @@ class DatabaseWrapper(BaseDatabaseWrapper):
+         self.introspection = DatabaseIntrospection(self)
+         self.validation = BaseDatabaseValidation(self)
+ 
++    def close(self):
++        if self.connection is not None:
++            try:
++                self.connection.close()
++            except Database.InterfaceError:
++                # connection was already closed by something
++                # like pgbouncer idle timeout.
++                pass
++            self.connection = None
++
+     def _cursor(self):
+         new_connection = False
+         set_tz = False
