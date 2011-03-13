@@ -1,0 +1,48 @@
+diff --git a/django_root/django/db/models/base.py b/django_root/django/db/models/base.py
+index ed45859..8b604d7 100644
+--- a/django_root/django/db/models/base.py
++++ b/django_root/django/db/models/base.py
+@@ -443,6 +443,11 @@ class Model(object):
+         Updates specified attributes on the current instance.
+         """
+         assert self.pk, "Cannot update an instance that has not yet been created."
++
++        for field in self._meta.fields:
++            if getattr(field, 'auto_now', False) and field.name not in kwargs:
++                kwargs[field.name] = field.pre_save(self, False)
++
+         affected = self.__class__._base_manager.using(using).filter(pk=self.pk).update(**kwargs)
+         for k,v in kwargs.iteritems():
+             if isinstance(v, ExpressionNode):
+diff --git a/django_root/tests/modeltests/update/models.py b/django_root/tests/modeltests/update/models.py
+index 9ce672f..7036292 100644
+--- a/django_root/tests/modeltests/update/models.py
++++ b/django_root/tests/modeltests/update/models.py
+@@ -23,6 +23,7 @@ class RelatedPoint(models.Model):
+ 
+ class A(models.Model):
+     x = models.IntegerField(default=10)
++    date = models.DateTimeField(auto_now=True)
+ 
+ class B(models.Model):
+     a = models.ForeignKey(A)
+diff --git a/django_root/tests/modeltests/update/tests.py b/django_root/tests/modeltests/update/tests.py
+index 13c8e1a..edac9f5 100644
+--- a/django_root/tests/modeltests/update/tests.py
++++ b/django_root/tests/modeltests/update/tests.py
+@@ -61,4 +61,12 @@ class SimpleTest(TestCase):
+         Test the update method with expressions which are not implemented.
+         """
+         self.a1.update(x=F('x') + 100)
+-        self.failUnlessEqual(self.a1.x, 110)
+\ No newline at end of file
++        self.failUnlessEqual(self.a1.x, 110)
++
++    def test_self_update_with_auto_now(self):
++        """
++        Test the update method with expressions which are not implemented.
++        """
++        date = self.a1.date
++        self.a1.update(x=1)
++        self.failIfEqual(self.a1.date, date)
+\ No newline at end of file
