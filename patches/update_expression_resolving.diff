@@ -1,15 +1,22 @@
 diff --git a/django_root/django/db/models/base.py b/django_root/django/db/models/base.py
-index 4da2802..676e96f 100644
+index 4da2802..ed45859 100644
 --- a/django_root/django/db/models/base.py
 +++ b/django_root/django/db/models/base.py
-@@ -1,5 +1,6 @@
+@@ -1,11 +1,12 @@
  import types
  import sys
 +import operator
  import os
  from itertools import izip
  import django.db.models.manager     # Imported to register signal handler.
-@@ -442,12 +443,17 @@ class Model(object):
+ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, FieldError, ValidationError, NON_FIELD_ERRORS
+ from django.core import validators
+-from django.db.models.expressions import ExpressionNode
++from django.db.models.expressions import ExpressionNode, F
+ from django.db.models.fields import AutoField, FieldDoesNotExist
+ from django.db.models.fields.related import OneToOneRel, ManyToOneRel, OneToOneField
+ from django.db.models.query import delete_objects, Q
+@@ -442,12 +443,18 @@ class Model(object):
          Updates specified attributes on the current instance.
          """
          assert self.pk, "Cannot update an instance that has not yet been created."
@@ -23,6 +30,7 @@ index 4da2802..676e96f 100644
 +                v = resolve_expression_node(self, v)
              setattr(self, k, v)
 +        if affected == 1:
++            signals.post_save.send(sender=self.__class__, instance=self, created=False)
 +            return True
 +        elif affected == 0:
 +            raise self.DoesNotExist("Cannot update an instance that is not in the database.")
@@ -31,7 +39,7 @@ index 4da2802..676e96f 100644
  
      update.alters_data = True
  
-@@ -1004,3 +1010,32 @@ if sys.version_info < (2, 5):
+@@ -1004,3 +1011,32 @@ if sys.version_info < (2, 5):
  else:
      def subclass_exception(name, parents, module):
          return type(name, parents, {'__module__': module})
@@ -64,3 +72,15 @@ index 4da2802..676e96f 100644
 +    for n in node.children[1:]:
 +        runner = op(runner, _resolve(instance, n))
 +    return runner
+diff --git a/django_root/tests/modeltests/update/tests.py b/django_root/tests/modeltests/update/tests.py
+index ea7259e..13c8e1a 100644
+--- a/django_root/tests/modeltests/update/tests.py
++++ b/django_root/tests/modeltests/update/tests.py
+@@ -61,4 +61,4 @@ class SimpleTest(TestCase):
+         Test the update method with expressions which are not implemented.
+         """
+         self.a1.update(x=F('x') + 100)
+-        self.failUnlessEqual(self.a1.x, 10)
+\ No newline at end of file
++        self.failUnlessEqual(self.a1.x, 110)
+\ No newline at end of file
