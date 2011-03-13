@@ -1,0 +1,28 @@
+diff --git a/django_root/django/db/models/query.py b/django_root/django/db/models/query.py
+index decedb5..3ace95a 100644
+--- a/django_root/django/db/models/query.py
++++ b/django_root/django/db/models/query.py
+@@ -395,20 +395,20 @@ class QuerySet(object):
+         obj.query.add_ordering('-%s' % latest_by)
+         return obj.get()
+ 
+-    def in_bulk(self, id_list):
++    def in_bulk(self, id_list, key='pk'):
+         """
+         Returns a dictionary mapping each of the given IDs to the object with
+         that ID.
+         """
+         assert self.query.can_filter(), \
+                 "Cannot use 'limit' or 'offset' with in_bulk"
+-        assert isinstance(id_list, (tuple,  list, set, frozenset, generator)), \
++        assert hasattr(id_list, '__iter__'), \
+                 "in_bulk() must be provided with a list of IDs."
+         if not id_list:
+             return {}
+         qs = self._clone()
+         qs.query.add_filter(('pk__in', id_list))
+-        return dict([(obj._get_pk_val(), obj) for obj in qs.iterator()])
++        return dict([(getattr(obj, key), obj) for obj in qs.iterator()])
+ 
+     def delete(self):
+         """
