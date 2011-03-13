@@ -6,7 +6,7 @@ a better, more generic solution.
 Patches
 =======
 
-autocommit_insert.diff
+autocommit_insert_12180.diff
   applies a patch from Django #12180 to fix insert with "returns id" under postgres >= 8.2
 
 delete_related.diff
@@ -16,7 +16,7 @@ improved_natural_keys_13252.diff
   Use the natural key instead of the primary key when serializing: http://code.djangoproject.com/ticket/13252
 
 in_bulk_keyiter.diff
-  adds back key kwarg to in_bulk and allows anything with __iter__ to be passed in
+  adds a key kwarg to in_bulk and allows anything with __iter__ to be passed in
 
 instance_update.diff
   adds an update() method to model instances which performs atomic updates
