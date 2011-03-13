@@ -1,0 +1,13 @@
+diff --git a/django_root/django/db/models/query.py b/django_root/django/db/models/query.py
+index b8b2340..e679cfa 100644
+--- a/django_root/django/db/models/query.py
++++ b/django_root/django/db/models/query.py
+@@ -415,7 +415,7 @@ class QuerySet(object):
+         assert self.query.can_filter(), \
+                 "Cannot use 'limit' or 'offset' with delete."
+ 
+-        del_query = self._clone()
++        del_query = self._clone(klass=QuerySet)
+ 
+         # The delete is actually 2 queries - one to find related objects,
+         # and one to delete. Make sure that the discovery of related
